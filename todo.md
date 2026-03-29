@@ -30,7 +30,7 @@ Work through each step in order. Each step should compile and pass its tests bef
   - `application.yml` with datasource config (use Testcontainers or H2 for tests).
   - Verify: server starts and Hibernate creates tables. `mvn -pl server test` with a Spring Boot context load test.
 
-- [ ] **2.2 Startup initialization — key pair generation and default admin**
+- [x] **2.2 Startup initialization — key pair generation and default admin**
   - On first startup (empty `users` table): generate Ed25519 key pair, persist to disk, create `admin:admin` user.
   - On subsequent startup: load existing key pair.
   - `SigningService` wraps the loaded key pair for signing operations.

@@ -293,8 +293,8 @@ Minimal CSS, either hand-written or using a classless CSS framework (e.g., Simpl
 ```yaml
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/coderush
-    username: coderush
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   jpa:
     hibernate:

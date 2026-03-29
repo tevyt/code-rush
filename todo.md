@@ -23,7 +23,7 @@ Work through each step in order. Each step should compile and pass its tests bef
 
 ## Phase 2: Server Foundation
 
-- [ ] **2.1 Server Spring Boot app with PostgreSQL and JPA entities**
+- [x] **2.1 Server Spring Boot app with PostgreSQL and JPA entities**
   - `ServerApplication.java` main class.
   - JPA entities: `User`, `BuildConfig`, `Agent`, `Build` with column mappings matching the design schema.
   - Spring Data repositories for each entity.

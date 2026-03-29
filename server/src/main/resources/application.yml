@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/admin}
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:password}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+code-rush:
+  secret: ${CODE_RUSH_SECRET:change-me-in-production}
+  keys-dir: ${user.home}/.code-rush/keys
+  build-timeout: 30m
+  step-timeout: 15m

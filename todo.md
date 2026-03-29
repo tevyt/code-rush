@@ -15,7 +15,7 @@ Work through each step in order. Each step should compile and pass its tests bef
   - DTO records: `EnrollmentRequest`, `EnrollmentResponse`, `BuildAssignment`, `CancellationCommand`, `StepReport`, `BuildCompletionReport`, `HeartbeatRequest`.
   - Verify: `mvn -pl common compile` compiles.
 
-- [ ] **1.3 Common module — Ed25519 signing utilities**
+- [x] **1.3 Common module — Ed25519 signing utilities**
   - `SigningUtil` with `generateKeyPair()`, `sign(payload, privateKey)`, `verify(payload, signature, publicKey)`.
   - Key serialization helpers (to/from base64).
   - Unit tests: generate key pair, sign a payload, verify succeeds, verify with wrong key fails, verify with tampered payload fails.

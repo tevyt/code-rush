@@ -10,7 +10,7 @@ Work through each step in order. Each step should compile and pass its tests bef
   - Module-level `pom.xml` files with correct dependencies (`server` → `common`, `agent` → `common`).
   - Verify: `mvn compile` compiles all three modules with no source yet (empty build succeeds).
 
-- [ ] **1.2 Common module — shared enums and DTOs**
+- [x] **1.2 Common module — shared enums and DTOs**
   - `BuildStatus`, `AgentState`, `StepStatus` enums.
   - DTO records: `EnrollmentRequest`, `EnrollmentResponse`, `BuildAssignment`, `CancellationCommand`, `StepReport`, `BuildCompletionReport`, `HeartbeatRequest`.
   - Verify: `mvn -pl common compile` compiles.

@@ -1,0 +1,10 @@
+/home/travis/projects/code-rush/common/src/main/java/dev/coderush/common/dto/BuildAssignment.java
+/home/travis/projects/code-rush/common/src/main/java/dev/coderush/common/dto/BuildCompletionReport.java
+/home/travis/projects/code-rush/common/src/main/java/dev/coderush/common/dto/CancellationCommand.java
+/home/travis/projects/code-rush/common/src/main/java/dev/coderush/common/dto/EnrollmentRequest.java
+/home/travis/projects/code-rush/common/src/main/java/dev/coderush/common/dto/EnrollmentResponse.java
+/home/travis/projects/code-rush/common/src/main/java/dev/coderush/common/dto/HeartbeatRequest.java
+/home/travis/projects/code-rush/common/src/main/java/dev/coderush/common/dto/StepReport.java
+/home/travis/projects/code-rush/common/src/main/java/dev/coderush/common/model/AgentState.java
+/home/travis/projects/code-rush/common/src/main/java/dev/coderush/common/model/BuildStatus.java
+/home/travis/projects/code-rush/common/src/main/java/dev/coderush/common/model/StepStatus.java

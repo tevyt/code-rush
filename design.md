@@ -2,14 +2,13 @@
 
 ## Project Structure
 
-Code Rush is a multi-module Gradle project producing two independent Spring Boot applications from a single repository.
+Code Rush is a multi-module Maven project producing two independent Spring Boot applications from a single repository.
 
 ```
 code-rush/
-├── build.gradle           # Root build file, shared dependencies and plugin config
-├── settings.gradle        # Declares subprojects
+├── pom.xml                # Parent POM, shared dependency management and plugin config
 ├── server/                # Application server module
-│   ├── build.gradle
+│   ├── pom.xml
 │   └── src/main/java/dev/coderush/server/
 │       ├── ServerApplication.java
 │       ├── config/        # Spring Security, crypto, startup initialization
@@ -18,14 +17,14 @@ code-rush/
 │       ├── repository/    # Spring Data JPA repositories
 │       └── service/       # Business logic (builds, agents, users, signing)
 ├── agent/                 # Build agent module
-│   ├── build.gradle
+│   ├── pom.xml
 │   └── src/main/java/dev/coderush/agent/
 │       ├── AgentApplication.java
 │       ├── config/        # Agent configuration properties
 │       ├── executor/      # Build step execution and process management
 │       └── client/        # HTTP client for server communication
 └── common/                # Shared module (DTOs, signing utilities, constants)
-    ├── build.gradle
+    ├── pom.xml
     └── src/main/java/dev/coderush/common/
         ├── dto/           # Request/response objects shared between server and agent
         ├── crypto/        # Signature generation and verification
@@ -36,14 +35,14 @@ Both `server` and `agent` depend on `common`. The server and agent have no direc
 
 ## Build Tool
 
-Gradle with the Kotlin DSL. Each module produces a Spring Boot executable JAR via the `org.springframework.boot` plugin.
+Maven with the Spring Boot parent POM. Each application module uses the `spring-boot-maven-plugin` to produce executable JARs.
 
 ```
-./gradlew :server:bootJar   # Produces server/build/libs/server.jar
-./gradlew :agent:bootJar    # Produces agent/build/libs/agent.jar
+mvn -pl server spring-boot:repackage   # Produces server/target/server-0.1.0.jar
+mvn -pl agent spring-boot:repackage    # Produces agent/target/agent-0.1.0.jar
 ```
 
-Java 25 is set as the toolchain version in the root build file.
+Java 25 is set via `java.version` and `maven.compiler.source/target` properties in the parent POM.
 
 ## Database Schema
 

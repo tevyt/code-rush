@@ -4,22 +4,22 @@ Work through each step in order. Each step should compile and pass its tests bef
 
 ## Phase 1: Project Skeleton
 
-- [ ] **1.1 Gradle multi-module setup**
-  - Root `build.gradle.kts` and `settings.gradle.kts` declaring `common`, `server`, and `agent` subprojects.
-  - Shared Java 25 toolchain config and Spring Boot plugin management.
-  - Module-level `build.gradle.kts` files with correct dependencies (`server` → `common`, `agent` → `common`).
-  - Verify: `./gradlew build` compiles all three modules with no source yet (empty build succeeds).
+- [x] **1.1 Maven multi-module setup**
+  - Parent `pom.xml` with Spring Boot parent, declaring `common`, `server`, and `agent` modules.
+  - Shared Java 25 compiler config and Spring Boot dependency management.
+  - Module-level `pom.xml` files with correct dependencies (`server` → `common`, `agent` → `common`).
+  - Verify: `mvn compile` compiles all three modules with no source yet (empty build succeeds).
 
 - [ ] **1.2 Common module — shared enums and DTOs**
   - `BuildStatus`, `AgentState`, `StepStatus` enums.
   - DTO records: `EnrollmentRequest`, `EnrollmentResponse`, `BuildAssignment`, `CancellationCommand`, `StepReport`, `BuildCompletionReport`, `HeartbeatRequest`.
-  - Verify: `./gradlew :common:build` compiles.
+  - Verify: `mvn -pl common compile` compiles.
 
 - [ ] **1.3 Common module — Ed25519 signing utilities**
   - `SigningUtil` with `generateKeyPair()`, `sign(payload, privateKey)`, `verify(payload, signature, publicKey)`.
   - Key serialization helpers (to/from base64).
   - Unit tests: generate key pair, sign a payload, verify succeeds, verify with wrong key fails, verify with tampered payload fails.
-  - Verify: `./gradlew :common:test`
+  - Verify: `mvn -pl common test`
 
 ## Phase 2: Server Foundation
 
@@ -28,7 +28,7 @@ Work through each step in order. Each step should compile and pass its tests bef
   - JPA entities: `User`, `BuildConfig`, `Agent`, `Build` with column mappings matching the design schema.
   - Spring Data repositories for each entity.
   - `application.yml` with datasource config (use Testcontainers or H2 for tests).
-  - Verify: server starts and Hibernate creates tables. `./gradlew :server:test` with a Spring Boot context load test.
+  - Verify: server starts and Hibernate creates tables. `mvn -pl server test` with a Spring Boot context load test.
 
 - [ ] **2.2 Startup initialization — key pair generation and default admin**
   - On first startup (empty `users` table): generate Ed25519 key pair, persist to disk, create `admin:admin` user.
@@ -43,7 +43,7 @@ Work through each step in order. Each step should compile and pass its tests bef
   - `/webhook/**` and `/api/agent/**` endpoints permitted without authentication.
   - Verify: unauthenticated requests redirect to `/login`. Authenticated admin can access `/users`. Authenticated viewer cannot access `/users`. Webhook and agent API paths are open.
 
-- [ ] **2.4 User management — service, controller, and UI**
+- [ ] **2.4 User management — shttps://github.com/tevyt/code-rush/blob/main/design.mdervice, controller, and UI**
   - `UserService`: create, list, delete users, change password.
   - `UserController` with Thymeleaf templates for user list and create/edit form.
   - Admin-only access.

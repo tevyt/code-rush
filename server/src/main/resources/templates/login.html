@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Code Rush</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}" href="/css/login.css">
+</head>
+<body>
+    <div class="main-content">
+        <div class="title">CODE RUSH</div>
+        <div class="title-underline"></div>
+        <div class="subtitle">CONTINUOUS DEPLOYMENT INTERFACE</div>
+
+        <div th:if="${param.error}" class="message message-error">
+            &gt; AUTHENTICATION_FAILED: INVALID CREDENTIALS
+        </div>
+        <div th:if="${param.logout}" class="message message-success">
+            &gt; SESSION_TERMINATED: LOGGED OUT SUCCESSFULLY
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">SYSTEM ACCESS</div>
+                <div class="live-indicator">
+                    <span class="live-dot"></span>
+                    LIVE_LINK
+                </div>
+            </div>
+
+            <form action="/login" th:action="@{/login}" method="post">
+                <div class="field">
+                    <label class="field-label" for="username">OPERATOR_ID</label>
+                    <div class="field-input-wrap">
+                        <input type="text" id="username" name="username" placeholder="NAME.SURNAME" autofocus required>
+                        <span class="field-icon">&#9899;</span>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="password">SECURITY_KEY</label>
+                    <div class="field-input-wrap">
+                        <input type="password" id="password" name="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" required>
+                        <span class="field-icon">&#128274;</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">INITIALIZE SESSION</button>
+            </form>
+
+            <div class="card-links">
+                <a href="#">[ FORGOT_CREDENTIALS ]</a>
+                <a href="#">[ REQUEST_ACCESS ]</a>
+            </div>
+
+            <div class="card-footer">
+                <div class="card-footer-meta">
+                    <span>
+                        <span class="meta-label">LOC</span>
+                        <span class="meta-value">NODE_01</span>
+                    </span>
+                    <span>
+                        <span class="meta-label">ENC</span>
+                        <span class="meta-value">AES-256</span>
+                    </span>
+                </div>
+                <div class="card-footer-version">v4.0.2</div>
+            </div>
+        </div>
+
+        <div class="boot-log">
+            <p>&gt; BOOT_SEQUENCE_OK</p>
+            <p>&gt; KERNEL_LOAD [########################] 100%</p>
+            <p>&gt; AWAITING_AUTHORIZATION...</p>
+        </div>
+    </div>
+
+    <footer class="page-footer">
+        <div>SYSTEM STATUS: OPTIMAL // CODERUSH_OS V4.0.2</div>
+        <div class="footer-links">
+            <a href="#">DOCUMENTATION</a>
+            <a href="#">API_REFERENCE</a>
+            <a href="#">SUPPORT</a>
+        </div>
+    </footer>
+</body>
+</html>

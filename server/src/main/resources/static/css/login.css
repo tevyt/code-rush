@@ -1,0 +1,363 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --pink: #e87adb;
+    --pink-glow: #e87adb88;
+    --pink-dim: #e87adb33;
+    --bg-dark: #0e0a14;
+    --bg-card: #1a1424;
+    --bg-input: #0e0a14;
+    --text-primary: #d4c8e0;
+    --text-dim: #6b5f7a;
+    --text-muted: #4a3f58;
+    --border: #2e2640;
+}
+
+body {
+    font-family: 'Share Tech Mono', monospace;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Scanline overlay */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.08) 2px,
+        rgba(0, 0, 0, 0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Vignette */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.6) 100%);
+    pointer-events: none;
+    z-index: 999;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Title */
+.title {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 3.5rem;
+    color: var(--pink);
+    text-shadow: 0 0 40px var(--pink-glow), 0 0 80px var(--pink-dim);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.25rem;
+    text-align: center;
+    font-style: italic;
+}
+
+.title-underline {
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--pink), transparent);
+    margin-bottom: 0.75rem;
+}
+
+.subtitle {
+    font-size: 0.75rem;
+    letter-spacing: 0.35em;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+/* Card */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    width: 100%;
+    position: relative;
+}
+
+/* Corner brackets */
+.card::before, .card::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-color: var(--text-dim);
+    border-style: solid;
+}
+
+.card::before {
+    top: -1px;
+    left: -1px;
+    border-width: 2px 0 0 2px;
+}
+
+.card::after {
+    bottom: -1px;
+    right: -1px;
+    border-width: 0 2px 2px 0;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    color: var(--text-primary);
+}
+
+.live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--text-dim);
+    display: inline-block;
+}
+
+/* Form */
+.field {
+    margin-bottom: 1.5rem;
+}
+
+.field-label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+}
+
+.field-input-wrap {
+    position: relative;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+}
+
+.field-input-wrap input {
+    width: 100%;
+    padding: 1rem 3rem 1rem 1rem;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    letter-spacing: 0.05em;
+}
+
+.field-input-wrap input::placeholder {
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+}
+
+.field-input-wrap:focus-within {
+    border-color: var(--pink);
+    box-shadow: 0 0 8px var(--pink-dim);
+}
+
+.field-icon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Submit button */
+.submit-btn {
+    width: 100%;
+    padding: 1rem;
+    margin-top: 0.5rem;
+    background: var(--pink);
+    color: var(--bg-dark);
+    border: none;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: box-shadow 0.2s, background 0.2s;
+}
+
+.submit-btn:hover {
+    box-shadow: 0 0 20px var(--pink-glow), 0 0 40px var(--pink-dim);
+}
+
+.submit-btn:active {
+    background: #d06ac8;
+}
+
+/* Card links */
+.card-links {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+}
+
+.card-links a {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    text-decoration: none;
+}
+
+.card-links a:hover {
+    color: var(--text-primary);
+}
+
+/* Card footer info */
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.card-footer-meta {
+    display: flex;
+    gap: 1.25rem;
+}
+
+.card-footer-meta span {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.meta-label {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+}
+
+.meta-value {
+    color: var(--text-dim);
+}
+
+.card-footer-version {
+    color: var(--pink);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+}
+
+/* Boot sequence text */
+.boot-log {
+    margin-top: 2rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+    text-align: left;
+    width: 100%;
+}
+
+.boot-log p {
+    opacity: 0.6;
+}
+
+/* Error / logout messages */
+.message {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    border: 1px solid;
+}
+
+.message-error {
+    color: #ff6b6b;
+    border-color: #ff6b6b33;
+    background: #ff6b6b0a;
+}
+
+.message-success {
+    color: #6bffa1;
+    border-color: #6bffa133;
+    background: #6bffa10a;
+}
+
+/* Page footer */
+.page-footer {
+    width: 100%;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+}
+
+.footer-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.footer-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+}
+
+.footer-links a:hover {
+    color: var(--text-primary);
+}

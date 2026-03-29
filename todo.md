@@ -36,14 +36,14 @@ Work through each step in order. Each step should compile and pass its tests bef
   - `SigningService` wraps the loaded key pair for signing operations.
   - Verify: start server twice — first creates keys + admin, second reuses them. Unit test the initialization logic.
 
-- [ ] **2.3 Spring Security configuration**
+- [x] **2.3 Spring Security configuration**
   - Session-based form login at `/login`.
   - Role-based URL access rules matching the controller table in the design.
   - `BCryptPasswordEncoder` bean.
   - `/webhook/**` and `/api/agent/**` endpoints permitted without authentication.
   - Verify: unauthenticated requests redirect to `/login`. Authenticated admin can access `/users`. Authenticated viewer cannot access `/users`. Webhook and agent API paths are open.
 
-- [ ] **2.4 User management — shttps://github.com/tevyt/code-rush/blob/main/design.mdervice, controller, and UI**
+- [ ] **2.4 User management — service, controller, and UI**
   - `UserService`: create, list, delete users, change password.
   - `UserController` with Thymeleaf templates for user list and create/edit form.
   - Admin-only access.

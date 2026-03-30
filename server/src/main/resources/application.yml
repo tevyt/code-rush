@@ -13,5 +13,10 @@ spring:
 code-rush:
   secret: ${CODE_RUSH_SECRET:change-me-in-production}
   keys-dir: ${user.home}/.code-rush/keys
+  server-host: ${SERVER_HOST:http://localhost:5173}
   build-timeout: 30m
   step-timeout: 15m
+  jwt:
+    secret: ${JWT_SECRET:change-me-jwt-secret-in-production}
+    access-token-expiry: 15m
+    refresh-token-expiry: 7d

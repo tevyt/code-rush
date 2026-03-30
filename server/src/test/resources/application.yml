@@ -14,5 +14,10 @@ spring:
 code-rush:
   secret: test-secret
   keys-dir: ${java.io.tmpdir}/code-rush-test/keys
+  server-host: http://localhost:5173
   build-timeout: 30m
   step-timeout: 15m
+  jwt:
+    secret: test-jwt-secret-that-is-at-least-32-bytes-long
+    access-token-expiry: 15m
+    refresh-token-expiry: 7d

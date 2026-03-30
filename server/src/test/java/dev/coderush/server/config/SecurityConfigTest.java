@@ -1,10 +1,10 @@
 package dev.coderush.server.config;
 
+import dev.coderush.server.service.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -18,22 +18,29 @@ class SecurityConfigTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Test
-    void unauthenticatedRequestRedirectsToLogin() throws Exception {
-        mockMvc.perform(get("/"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("**/login"));
+    @Autowired
+    private JwtService jwtService;
+
+    private String tokenFor(String username, String role) {
+        return "Bearer " + jwtService.generateAccessToken(username, role);
     }
 
     @Test
-    void loginPageIsAccessible() throws Exception {
-        mockMvc.perform(get("/login"))
-                .andExpect(status().isOk());
+    void unauthenticatedApiRequestReturns401() throws Exception {
+        mockMvc.perform(get("/api/builds"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void authEndpointsAreOpenWithoutAuth() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content("{\"username\":\"wrong\",\"password\":\"wrong\"}"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
     void webhookEndpointIsOpenWithoutAuth() throws Exception {
-        // Will get 404 since no controller exists yet, but should not redirect to login
         mockMvc.perform(post("/webhook/1")
                         .contentType("application/json")
                         .content("{}"))
@@ -49,52 +56,53 @@ class SecurityConfigTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
-    void adminCanAccessUsersPage() throws Exception {
-        // 404 is fine — no controller yet. The point is it's not 403.
-        mockMvc.perform(get("/users"))
+    void adminCanAccessUsersApi() throws Exception {
+        mockMvc.perform(get("/api/users")
+                        .header("Authorization", tokenFor("admin", "ADMIN")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void developerCannotAccessUsersApi() throws Exception {
+        mockMvc.perform(get("/api/users")
+                        .header("Authorization", tokenFor("dev", "DEVELOPER")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void viewerCannotAccessUsersApi() throws Exception {
+        mockMvc.perform(get("/api/users")
+                        .header("Authorization", tokenFor("viewer", "VIEWER")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminCanAccessAgentsApi() throws Exception {
+        // 404 since no controller — but not 401 or 403
+        mockMvc.perform(get("/api/agents")
+                        .header("Authorization", tokenFor("admin", "ADMIN")))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @WithMockUser(roles = "DEVELOPER")
-    void developerCannotAccessUsersPage() throws Exception {
-        mockMvc.perform(get("/users"))
+    void developerCannotAccessAgentsApi() throws Exception {
+        mockMvc.perform(get("/api/agents")
+                        .header("Authorization", tokenFor("dev", "DEVELOPER")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(roles = "VIEWER")
-    void viewerCannotAccessUsersPage() throws Exception {
-        mockMvc.perform(get("/users"))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "DEVELOPER")
-    void developerCannotAccessAgentsPage() throws Exception {
-        mockMvc.perform(get("/agents"))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void adminCanAccessAgentsPage() throws Exception {
-        mockMvc.perform(get("/agents"))
+    void developerCanAccessBuildConfigsApi() throws Exception {
+        // 404 since no controller — but not 401 or 403
+        mockMvc.perform(get("/api/build-configs")
+                        .header("Authorization", tokenFor("dev", "DEVELOPER")))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @WithMockUser(roles = "VIEWER")
-    void viewerCannotAccessBuildConfigCreate() throws Exception {
-        mockMvc.perform(get("/build-configs/new"))
+    void viewerCannotAccessBuildConfigsApi() throws Exception {
+        mockMvc.perform(get("/api/build-configs")
+                        .header("Authorization", tokenFor("viewer", "VIEWER")))
                 .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "DEVELOPER")
-    void developerCanAccessBuildConfigCreate() throws Exception {
-        mockMvc.perform(get("/build-configs/new"))
-                .andExpect(status().isNotFound());
     }
 }

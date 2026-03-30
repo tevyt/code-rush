@@ -9,5 +9,13 @@ public record CodeRushProperties(
     String secret,
     String keysDir,
     Duration buildTimeout,
-    Duration stepTimeout
-) {}
+    Duration stepTimeout,
+    String serverHost,
+    JwtProperties jwt
+) {
+    public record JwtProperties(
+        String secret,
+        Duration accessTokenExpiry,
+        Duration refreshTokenExpiry
+    ) {}
+}

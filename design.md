@@ -11,11 +11,22 @@ code-rush/
 │   ├── pom.xml
 │   └── src/main/java/dev/coderush/server/
 │       ├── ServerApplication.java
-│       ├── config/        # Spring Security, crypto, startup initialization
-│       ├── controller/    # Thymeleaf UI controllers and webhook endpoint
+│       ├── config/        # Spring Security (JWT), crypto, startup initialization
+│       ├── controller/    # REST API controllers and webhook endpoint
 │       ├── model/         # JPA entities
 │       ├── repository/    # Spring Data JPA repositories
-│       └── service/       # Business logic (builds, agents, users, signing)
+│       └── service/       # Business logic (builds, agents, users, signing, auth)
+├── code-rush-ui/          # React SPA module
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   └── src/
+│       ├── main.tsx       # Entry point, React Router setup
+│       ├── App.tsx        # Root component with route definitions
+│       ├── pages/         # Page components (Login, Dashboard, BuildDetail, etc.)
+│       ├── components/    # Shared UI components (Layout, Sidebar, etc.)
+│       ├── api/           # API client functions with JWT token handling
+│       └── context/       # React context providers (AuthContext, etc.)
 ├── agent/                 # Build agent module
 │   ├── pom.xml
 │   └── src/main/java/dev/coderush/agent/
@@ -31,7 +42,7 @@ code-rush/
         └── model/         # Shared enums (BuildStatus, AgentState, StepStatus)
 ```
 
-Both `server` and `agent` depend on `common`. The server and agent have no direct dependency on each other.
+Both `server` and `agent` depend on `common`. The server and agent have no direct dependency on each other. The `code-rush-ui` module is a standalone Vite/React project — not a Maven module. Its production build output is copied into the server's `src/main/resources/static/` directory for serving.
 
 ## Build Tool
 
@@ -131,10 +142,16 @@ SSH private keys are encrypted at rest using AES-256-GCM. The encryption key is 
 
 ### Spring Security Configuration
 
-- Session-based authentication with form login.
+- Stateless authentication using JWT tokens. No HTTP sessions.
+- JWT tokens are issued by the `/api/auth/login` endpoint and must be included in the `Authorization: Bearer <token>` header on all subsequent API requests.
+- Access and refresh token flow:
+  - **Access token**: Short-lived (15 minutes). Included in every API request.
+  - **Refresh token**: Longer-lived (7 days). Used to obtain a new access token via `/api/auth/refresh`.
 - Role-based access control using Spring Security's `@PreAuthorize` or URL-based rules.
 - Three roles map directly to granted authorities: `ROLE_ADMIN`, `ROLE_DEVELOPER`, `ROLE_VIEWER`.
 - Password encoding via `BCryptPasswordEncoder`.
+- A `JwtAuthenticationFilter` (extends `OncePerRequestFilter`) extracts and validates the JWT from each request, setting the `SecurityContext`.
+- CORS is configured to allow requests from the UI dev server (`http://localhost:5173`) in development.
 
 ### Startup Initialization
 
@@ -146,15 +163,20 @@ On subsequent startups, the server loads the existing key pair from disk.
 
 ### Controllers
 
-| Controller             | Path                          | Role          | Purpose                              |
-|------------------------|-------------------------------|---------------|--------------------------------------|
-| `DashboardController`  | `/`                           | All           | Build history overview               |
-| `BuildConfigController`| `/build-configs/**`           | Dev+          | CRUD for build configurations        |
-| `BuildController`      | `/builds/**`                  | All (read), Dev+ (cancel) | Build detail and cancellation |
-| `AgentController`      | `/agents/**`                  | Admin         | View and manage agents               |
-| `UserController`       | `/users/**`                   | Admin         | User management                      |
-| `WebhookController`    | `/webhook/{buildConfigId}`    | Anonymous     | GitHub webhook receiver              |
-| `AgentApiController`   | `/api/agent/**`               | Anonymous*    | Agent enrollment, heartbeat, and build status reporting |
+All UI-facing controllers are REST APIs returning JSON. The SPA is served as a static resource.
+
+| Controller             | Path                              | Role          | Purpose                              |
+|------------------------|-----------------------------------|---------------|--------------------------------------|
+| `SpaController`        | `/`, `/{path:[^api].*}`           | Anonymous     | Forwards non-API routes to `index.html` for client-side routing |
+| `AuthController`       | `/api/auth/login`                 | Anonymous     | Authenticates user, returns JWT access + refresh tokens |
+|                        | `/api/auth/refresh`               | Anonymous     | Issues new access token from valid refresh token |
+|                        | `/api/auth/me`                    | Authenticated | Returns current user info and role   |
+| `BuildApiController`   | `/api/builds/**`                  | All (read), Dev+ (cancel) | Build list, detail, and cancellation |
+| `BuildConfigApiController` | `/api/build-configs/**`       | Dev+          | CRUD for build configurations        |
+| `AgentManagementController` | `/api/agents/**`             | Admin         | View and manage agents               |
+| `UserApiController`    | `/api/users/**`                   | Admin         | User management                      |
+| `WebhookController`    | `/webhook/{buildConfigId}`        | Anonymous     | GitHub webhook receiver              |
+| `AgentApiController`   | `/api/agent/**`                   | Anonymous*    | Agent enrollment, heartbeat, and build status reporting |
 
 *Agent API endpoints are unauthenticated in the Spring Security sense but are protected by signature verification where applicable.
 
@@ -167,6 +189,7 @@ On subsequent startups, the server loads the existing key pair from disk.
 | `BuildConfigService`  | CRUD for build configurations, SSH key encryption/decryption     |
 | `UserService`         | User CRUD and password management                                |
 | `SigningService`      | Signs build assignments and cancellation commands with the server's private key |
+| `JwtService`          | Generates and validates JWT access/refresh tokens                |
 | `WebhookService`      | Validates GitHub webhook signatures, parses push payloads, queues builds |
 
 ### Scheduled Tasks
@@ -263,28 +286,47 @@ Payloads are serialized to a canonical JSON form before signing to ensure determ
 
 ## Web UI
 
-Server-rendered HTML using Thymeleaf templates with the Spring Boot Thymeleaf starter. No JavaScript framework — interactivity is limited to standard HTML forms and page navigation.
+The UI is a single-page application (SPA) built with React, TypeScript, and Vite, located in the `code-rush-ui/` module. It communicates with the server exclusively through REST APIs and handles routing client-side with React Router.
 
-### Layout
+### Tech Stack
 
-A shared Thymeleaf layout (`layout.html`) provides the navigation sidebar and page structure. Individual pages extend this layout.
+- **React 19** with TypeScript
+- **Vite** for dev server and production builds
+- **React Router** for client-side routing
+- **Tailwind CSS** for styling
+- JWT tokens stored in memory (access token) and `httpOnly` cookie (refresh token) for authentication
 
-### Pages
+### SPA Serving
 
-| Page                  | Path                         | Description                                 |
-|-----------------------|------------------------------|---------------------------------------------|
-| Login                 | `/login`                     | Form-based login                            |
-| Dashboard             | `/`                          | Build history list with filters             |
-| Build Detail          | `/builds/{id}`               | Per-step execution results and logs         |
-| Build Configs List    | `/build-configs`             | List all build configurations               |
-| Build Config Form     | `/build-configs/new`, `/build-configs/{id}/edit` | Create/edit a build configuration |
-| Agents                | `/agents`                    | List agents with status                     |
-| Users                 | `/users`                     | User management (admin only)                |
-| Server Info           | `/admin/server`              | Displays server public key (admin only)     |
+In production, the Vite build output (`dist/`) is copied into the server's `src/main/resources/static/` directory. The server's `SpaController` forwards all non-API routes to `index.html`, allowing React Router to handle client-side navigation.
+
+During development, the Vite dev server runs on `http://localhost:5173` and proxies API requests to the Spring Boot server.
+
+### Pages / Routes
+
+| Route                        | Component            | Description                                 |
+|------------------------------|----------------------|---------------------------------------------|
+| `/login`                     | `LoginPage`          | JWT-based login form                        |
+| `/`                          | `DashboardPage`      | Build history list with filters             |
+| `/builds/:id`               | `BuildDetailPage`    | Per-step execution results and logs         |
+| `/build-configs`            | `BuildConfigsPage`   | List all build configurations               |
+| `/build-configs/new`        | `BuildConfigFormPage`| Create a build configuration                |
+| `/build-configs/:id/edit`   | `BuildConfigFormPage`| Edit a build configuration                  |
+| `/agents`                   | `AgentsPage`         | List agents with status                     |
+| `/users`                    | `UsersPage`          | User management (admin only)                |
+| `/admin/server`             | `ServerInfoPage`     | Displays server public key (admin only)     |
+
+### Authentication Flow (Client-Side)
+
+1. User submits credentials on the login page.
+2. The UI calls `POST /api/auth/login` and receives access + refresh tokens.
+3. The access token is stored in memory and attached to every API request via an `Authorization` header.
+4. When the access token expires, the API client automatically calls `POST /api/auth/refresh` to obtain a new one.
+5. Protected routes are guarded by an `AuthContext` provider that redirects unauthenticated users to `/login`.
 
 ### Styling
 
-Minimal CSS, either hand-written or using a classless CSS framework (e.g., Simple.css or Water.css) for baseline styling without build tooling. No CSS preprocessor.
+Tailwind CSS loaded via CDN (`cdn.tailwindcss.com`) with a custom Material Design 3–inspired dark theme. Custom utility classes for scanlines, grid patterns, and neon glow effects are defined in the app's base styles.
 
 ## Configuration
 
@@ -308,6 +350,10 @@ code-rush:
   keys-dir: ~/.code-rush/keys       # Ed25519 key pair storage
   build-timeout: 30m                # Max build duration before timeout
   step-timeout: 15m                 # Max individual step duration
+  jwt:
+    secret: ${JWT_SECRET}           # HMAC key for signing JWTs
+    access-token-expiry: 15m        # Access token lifetime
+    refresh-token-expiry: 7d        # Refresh token lifetime
 ```
 
 ### Agent — `application.yml`

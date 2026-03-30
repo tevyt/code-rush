@@ -37,17 +37,24 @@ Work through each step in order. Each step should compile and pass its tests bef
   - Verify: start server twice — first creates keys + admin, second reuses them. Unit test the initialization logic.
 
 - [x] **2.3 Spring Security configuration**
-  - Session-based form login at `/login`.
+  - Stateless JWT authentication. No HTTP sessions.
+  - `JwtAuthenticationFilter` extracts and validates the JWT from each request's `Authorization: Bearer <token>` header.
   - Role-based URL access rules matching the controller table in the design.
   - `BCryptPasswordEncoder` bean.
   - `/webhook/**` and `/api/agent/**` endpoints permitted without authentication.
-  - Verify: unauthenticated requests redirect to `/login`. Authenticated admin can access `/users`. Authenticated viewer cannot access `/users`. Webhook and agent API paths are open.
+  - CORS configured to allow requests from the UI dev server (`http://localhost:5173`) in development.
+  - Verify: unauthenticated API requests return 401. Authenticated admin can access `/api/users`. Authenticated viewer cannot access `/api/users`. Webhook and agent API paths are open.
 
-- [ ] **2.4 User management — service, controller, and UI**
+- [ ] **2.4 Auth controller — login, refresh, and current user**
+  - `AuthController`: `POST /api/auth/login` (returns access + refresh tokens), `POST /api/auth/refresh` (issues new access token), `GET /api/auth/me` (returns current user info and role).
+  - `JwtService`: generate and validate JWT access tokens (15 min) and refresh tokens (7 days).
+  - Verify: login with valid credentials returns tokens. Access token grants API access. Expired access token is rejected. Refresh token obtains a new access token. Integration tests.
+
+- [ ] **2.5 User management — service and REST controller**
   - `UserService`: create, list, delete users, change password.
-  - `UserController` with Thymeleaf templates for user list and create/edit form.
+  - `UserApiController` at `/api/users/**` returning JSON.
   - Admin-only access.
-  - Verify: log in as admin, create a developer user, log in as that user. Integration test for user CRUD.
+  - Verify: authenticated admin can create a developer user via API. Integration test for user CRUD.
 
 ## Phase 3: Build Configuration
 
@@ -55,12 +62,12 @@ Work through each step in order. Each step should compile and pass its tests bef
   - AES-256-GCM encrypt/decrypt using a key derived from `CODE_RUSH_SECRET` via PBKDF2 or HKDF.
   - Unit tests: encrypt then decrypt round-trips, decrypt with wrong secret fails.
 
-- [ ] **3.2 Build config — service, controller, and UI**
+- [ ] **3.2 Build config — service and REST controller**
   - `BuildConfigService`: create, update, list, get. Encrypts SSH key on save, decrypts on read (for agent transfer).
-  - `BuildConfigController` with Thymeleaf templates: list page, create/edit form.
-  - Fields: name, repository URL, SSH key (textarea), webhook secret.
+  - `BuildConfigApiController` at `/api/build-configs/**` returning JSON.
+  - Fields: name, repository URL, SSH key, webhook secret.
   - Accessible to developer and admin roles.
-  - Verify: create a build config via UI, confirm it persists. SSH key is encrypted in the database. Integration test for CRUD operations.
+  - Verify: create a build config via API, confirm it persists. SSH key is encrypted in the database. Integration test for CRUD operations.
 
 ## Phase 4: Agent Enrollment and Heartbeats
 
@@ -69,10 +76,10 @@ Work through each step in order. Each step should compile and pass its tests bef
   - `AgentService`: enroll agent (create record, sign nonce), process heartbeat, scheduled task to mark agents offline after 90s.
   - Verify: call enroll endpoint with a nonce, get back a valid signature. Call heartbeat, confirm agent stays IDLE. Stop heartbeats, confirm agent goes OFFLINE after 90s. Integration tests.
 
-- [ ] **4.2 Server-side agent management UI**
-  - `AgentController` with Thymeleaf template: list agents with name, address, state, last heartbeat.
+- [ ] **4.2 Server-side agent management REST controller**
+  - `AgentManagementController` at `/api/agents/**` returning JSON: list agents with name, address, state, last heartbeat.
   - Admin-only access.
-  - Verify: after enrolling an agent (via test or curl), the agent appears on the agents page.
+  - Verify: after enrolling an agent (via test or curl), the agent appears in the API response.
 
 - [ ] **4.3 Agent Spring Boot app — enrollment and heartbeat**
   - `AgentApplication.java` main class.
@@ -124,26 +131,23 @@ Work through each step in order. Each step should compile and pass its tests bef
   - `POST /api/agent/builds/{id}/complete`: set final build status, `finished_at` timestamp, mark agent as `IDLE`.
   - Verify: simulate agent reports — build record updates correctly through the full lifecycle. Integration tests.
 
-## Phase 7: Build Observability UI
+## Phase 7: Build Observability
 
-- [ ] **7.1 Dashboard — build history list**
-  - `DashboardController` at `/`: paginated list of builds showing config name, commit SHA/author/message, branch, status, timestamp.
-  - Filters: by build configuration, status, branch.
-  - Thymeleaf template with filter form and build list table.
-  - Verify: create several builds with different statuses — all display correctly. Filters work. Accessible to all roles.
+- [ ] **7.1 Build REST API**
+  - `BuildApiController` at `/api/builds/**` returning JSON: paginated build list with config name, commit SHA/author/message, branch, status, timestamp. Filters: by build configuration, status, branch. Build detail endpoint with per-step execution results.
+  - Read access for all authenticated roles. Cancel endpoint for developer and admin roles.
+  - Verify: create several builds with different statuses — API returns correct data. Filters work. Integration tests.
 
-- [ ] **7.2 Build detail page**
-  - `BuildController` at `/builds/{id}`: show build metadata and per-step execution results.
-  - Each step shows: name, script, status, and expandable log output.
-  - Thymeleaf template.
-  - Verify: view a completed build — all steps and logs display. View a failed build — failed step is highlighted, subsequent steps show as not executed.
+- [ ] **7.2 SPA controller for client-side routing**
+  - `SpaController` at `/`, `/{path:[^api].*}`: forwards all non-API routes to `index.html` so React Router handles client-side navigation.
+  - Verify: requesting `/builds/1` serves `index.html`. Requesting `/api/builds/1` hits the REST controller.
 
 ## Phase 8: Build Cancellation
 
 - [ ] **8.1 Server-side cancellation**
-  - Cancel button on build detail page (visible to admin and developer roles, only for `RUNNING` builds).
+  - Cancel endpoint on `BuildApiController` (admin and developer roles, only for `RUNNING` builds).
   - `BuildService.cancelBuild()`: send signed `CancellationCommand` to the agent's `/agent/build/cancel` endpoint.
-  - Verify: cancel a running build — server sends cancellation to agent.
+  - Verify: cancel a running build via API — server sends cancellation to agent.
 
 - [ ] **8.2 Agent-side cancellation**
   - `POST /agent/build/cancel`: verify signature, terminate running process (`destroyForcibly()`), clean up work directory.
@@ -158,19 +162,46 @@ Work through each step in order. Each step should compile and pass its tests bef
   - For timed-out builds: send cancellation to agent, mark build as `FAILED` with error message "Build timed out after 30 minutes".
   - Verify: start a long-running build, set timeout to a short value — build is failed with timeout message.
 
-## Phase 10: Server Info and Polish
+## Phase 10: Web UI (code-rush-ui)
 
-- [ ] **10.1 Server info page**
-  - `GET /admin/server`: displays the server's Ed25519 public key (base64) for copying during agent setup.
-  - Admin-only access.
-  - Verify: log in as admin, navigate to server info, public key is displayed and copyable.
+- [ ] **10.1 React SPA project setup**
+  - Initialize `code-rush-ui/` with Vite, React 19, TypeScript, React Router, and Tailwind CSS.
+  - Configure Vite dev server to proxy `/api` and `/webhook` requests to `http://localhost:8080`.
+  - API client module with JWT token handling: attach access token to requests, auto-refresh on 401.
+  - `AuthContext` provider: stores tokens, exposes login/logout, redirects unauthenticated users to `/login`.
+  - Verify: `npm run dev` starts the dev server and proxies API requests to the backend.
 
-- [ ] **10.2 Thymeleaf layout and navigation**
-  - Shared `layout.html` with sidebar navigation: Dashboard, Build Configs, Agents (admin), Users (admin), Server Info (admin).
-  - Active page highlighting.
-  - Role-based nav item visibility.
+- [ ] **10.2 Login page**
+  - `LoginPage` at `/login`: credentials form, calls `POST /api/auth/login`, stores tokens, redirects to dashboard.
+  - Verify: login with valid credentials redirects to dashboard. Invalid credentials show error.
+
+- [ ] **10.3 Dashboard and build detail pages**
+  - `DashboardPage` at `/`: build history list with filters (config, status, branch).
+  - `BuildDetailPage` at `/builds/:id`: build metadata and per-step execution results with expandable log output. Cancel button for running builds (developer/admin).
+  - Verify: builds display correctly. Filters work. Failed build steps are highlighted.
+
+- [ ] **10.4 Build config pages**
+  - `BuildConfigsPage` at `/build-configs`: list all build configurations.
+  - `BuildConfigFormPage` at `/build-configs/new` and `/build-configs/:id/edit`: create/edit form with name, repository URL, SSH key, webhook secret.
+  - Verify: create and edit build configs through the UI.
+
+- [ ] **10.5 Admin pages**
+  - `AgentsPage` at `/agents`: list agents with name, address, state, last heartbeat. Admin-only.
+  - `UsersPage` at `/users`: user management (create, delete, change password). Admin-only.
+  - `ServerInfoPage` at `/admin/server`: displays server's Ed25519 public key (base64) for copying. Admin-only.
+  - Verify: admin can access all pages. Non-admin users are redirected away from admin pages.
+
+- [ ] **10.6 Layout and navigation**
+  - Shared `Layout` component with sidebar navigation: Dashboard, Build Configs, Agents (admin), Users (admin), Server Info (admin).
+  - Active page highlighting. Role-based nav item visibility.
+  - Tailwind CSS dark theme with Material Design 3 inspiration.
   - Verify: navigation works across all pages, role-restricted items are hidden for non-admin users.
 
-- [ ] **10.3 End-to-end integration test**
+- [ ] **10.7 Production build and serving**
+  - Vite production build outputs to `dist/`. Copy into server's `src/main/resources/static/`.
+  - `SpaController` serves `index.html` for all non-API routes.
+  - Verify: `npm run build` produces static assets. Server serves the SPA and API requests work correctly.
+
+- [ ] **10.8 End-to-end integration test**
   - Full flow: server starts → agent enrolls → create build config → simulate webhook → build queues → agent executes → steps report back → build succeeds → view in UI.
   - Verify: the entire pipeline works from webhook to build completion.
